@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Winlator 组件下载 · The412Banner</title>
+<style>
+  :root{
+    --bg:#0f1117;--surface:#1a1d27;--border:#2a2e3a;--text:#e4e6eb;
+    --dim:#9aa0b0;--accent:#4f8cff;--soft:#1e2a4a;--danger:#e87c7c;--r:10px;
+    --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.5;padding:24px 16px 80px;min-height:100vh}
+  header,.toolbar,.stats,.grid,.panel{max-width:1100px;margin-left:auto;margin-right:auto}
+  header{margin-bottom:24px}
+  h1{font-size:1.55rem;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+  header p{color:var(--dim);font-size:.88rem}
+  header a{color:var(--accent);text-decoration:none}
+  header a:hover{text-decoration:underline}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+  .search-box{flex:1 1 240px;position:relative}
+  .search-box input{width:100%;padding:11px 14px 11px 38px;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.92rem;outline:none}
+  .search-box input:focus{border-color:var(--accent)}
+  .search-box::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.6;font-size:.9rem;pointer-events:none}
+  .type-filters{display:flex;flex-wrap:wrap;gap:6px}
+  .type-filters button{padding:7px 13px;border-radius:20px;border:1px solid var(--border);
+    background:var(--surface);color:var(--dim);font-size:.82rem;cursor:pointer;white-space:nowrap;transition:all .15s}
+  .type-filters button:hover{border-color:var(--accent);color:var(--text)}
+  .type-filters button.active{background:var(--soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+  .stats{font-size:.82rem;color:var(--dim);margin-bottom:14px;min-height:1.2em}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:16px;display:flex;flex-direction:column;gap:10px;transition:border-color .15s}
+  .card:hover{border-color:#3d4356}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .badge{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:3px 8px;border-radius:5px;background:var(--soft);color:var(--accent);flex-shrink:0}
+  .badge.Wine{background:#2a1f1a;color:#e8a87c}
+  .badge.Proton{background:#1a2a1f;color:#7ce8a8}
+  .badge.DXVK{background:#1a1a2e;color:#a87ce8}
+  .badge.VKD3D{background:#2a1a2a;color:#e87cd4}
+  .badge.Box64,.badge.WOWBox64{background:#1a2a2a;color:#7ce8e8}
+  .badge.FEXCore{background:#2a2a1a;color:#e8e87c}
+  .card-title{font-size:.92rem;font-weight:600;word-break:break-all}
+  .card-meta{font-size:.78rem;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card-actions{display:flex;gap:8px;margin-top:2px}
+  .btn{flex:1;text-align:center;padding:9px 10px;border-radius:7px;font-size:.82rem;
+    font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:filter .15s}
+  .btn:hover{filter:brightness(1.15)}
+  .btn-download{background:var(--accent);color:#fff}
+  .btn-copy{background:var(--border);color:var(--text)}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:8px}
+  .empty{text-align:center;color:var(--dim);margin:60px auto;display:none}
+  .empty.show{display:block}
+  .status{text-align:center;color:var(--dim);margin:30px auto}
+  .status.error{color:var(--danger)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin:24px auto}
+  .panel h2{font-size:1.05rem;margin-bottom:10px;color:var(--danger)}
+  .panel p{font-size:.88rem;color:var(--dim);margin-bottom:12px;word-break:break-all}
+  .panel ul{font-size:.8rem;color:var(--dim);margin:0 0 14px 18px;line-height:1.7}
+  .panel .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .panel .row label{display:inline-block}
+  .hidden{display:none!important}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:#2a2e3a;color:var(--text);padding:10px 20px;border-radius:8px;font-size:.85rem;
+    box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:0;transition:all .25s;pointer-events:none;z-index:100}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .drop-overlay{position:fixed;inset:0;background:rgba(79,140,255,.12);border:3px dashed var(--accent);
+    display:none;align-items:center;justify-content:center;font-size:1.2rem;font-weight:600;z-index:200}
+  .drop-overlay.show{display:flex}
+  @media(max-width:520px){body{padding:16px 10px 60px}h1{font-size:1.25rem}
+    .grid{grid-template-columns:1fr}.card-actions{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Winlator 组件下载</h1>
+  <p>数据源：
+    <a href="https://github.com/The412Banner/winlator-contents/blob/main/contents.json" target="_blank" rel="noopener">The412Banner/winlator-contents</a>
+  </p>
+</header>
+
+<div class="toolbar" id="toolbar" style="display:none">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="搜索版本名称…" autocomplete="off">
+  </div>
+  <div class="type-filters" id="typeFilters"></div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="status" id="status">正在加载 contents.json…</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="empty" id="empty">没有匹配的组件，试试其他搜索词或类型。</div>
+
+<!-- 错误面板：加载失败时显示，避免“黑屏” -->
+<div class="panel hidden" id="errorPanel">
+  <h2>⚠ 无法从网络加载 contents.json</h2>
+  <p id="errorMsg"></p>
+  <p style="color:var(--text);font-size:.88rem">请任选一种方式继续：</p>
+  <ul>
+    <li>把 <code>contents.json</code> 下载到本地，点击下方按钮选择它（推荐，离线可用）</li>
+    <li>或直接把 JSON 文件拖进本页面</li>
+    <li>若用 <code>file://</code> 双击打开，部分浏览器会拦截跨域请求，改用本地文件最稳</li>
+  </ul>
+  <div class="row">
+    <label class="btn-ghost" style="cursor:pointer">
+      选择本地 contents.json
+      <input type="file" id="fileInput" accept=".json,application/json" hidden>
+    </label>
+    <button class="btn-ghost" id="retryBtn" style="cursor:pointer">重试网络加载</button>
+  </div>
+  <div id="diag" style="margin-top:16px;font-size:.75rem;color:var(--dim);line-height:1.7"></div>
+</div>
+
+<div class="toast" id="toast">链接已复制</div>
+<div class="drop-overlay" id="dropOverlay">松开以加载 JSON 文件</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- 多个候选数据源，按顺序尝试 ---------- */
+var REPO = "The412Banner/winlator-contents";
+var RAW_BASES = [
+  "https://cdn.jsdelivr.net/gh/" + REPO + "@main/contents.json",
+  "https://cdn.jsdelivr.net/gh/" + REPO + "@master/contents.json",
+  "https://raw.githubusercontent.com/" + REPO + "/main/contents.json",
+  "https://raw.githubusercontent.com/" + REPO + "/master/contents.json"
+];
+var PROXY = "https://api.allorigins.win/raw?url=";
+var TIMEOUT_MS = 8000;
+
+/* ---------- DOM ---------- */
+var $ = function(id){ return document.getElementById(id); };
+var grid=$("grid"), statusEl=$("status"), statsEl=$("stats"), emptyEl=$("empty"),
+    searchInput=$("searchInput"), typeFilters=$("typeFilters"), toolbar=$("toolbar"),
+    toastEl=$("toast"), errPanel=$("errorPanel"), errMsg=$("errorMsg"), diag=$("diag"),
+    fileInput=$("fileInput"), retryBtn=$("retryBtn"), dropOverlay=$("dropOverlay");
+
+var allItems = [], activeType = "all", searchTerm = "";
+
+/* ---------- 工具 ---------- */
+function esc(s){
+  return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function showToast(msg){
+  toastEl.textContent=msg; toastEl.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(function(){toastEl.classList.remove("show");},1600);
+}
+function fileNameFromUrl(u){
+  try{
+    var p=new URL(u).pathname;
+    var n=decodeURIComponent(p.split("/").pop()||"");
+    return n||u;
+  }catch(e){ return String(u||""); }
+}
+function normType(t){
+  if(!t) return "Other";
+  var known=["Wine","Proton","DXVK","VKD3D","Box64","WOWBox64","FEXCore"];
+  var s=String(t);
+  for(var i=0;i<known.length;i++){
+    if(known[i].toLowerCase()===s.toLowerCase()) return known[i];
+  }
+  return s;
+}
+
+/* ---------- 字段兼容：不同版本的 contents.json 可能用不同键名 ---------- */
+function pickUrl(it){
+  return it.remoteUrl || it.url || it.downloadUrl || it.download_url ||
+         it.link || it.href || it.path || "";
+}
+function pickVerName(it){
+  return it.verName || it.name || it.version || it.title || it.label || it.ver || "";
+}
+function pickVerCode(it){
+  var v = it.verCode;
+  if(v==null) v = it.versionCode;
+  if(v==null) v = it.code;
+  if(v==null) v = 0;
+  return v;
+}
+function pickType(it){
+  return it.type || it.Type || it.category || it.group || it.kind || "Other";
+}
+
+/* 把任意 JSON 结构归一成数组 */
+function normalizeRoot(data){
+  if(Array.isArray(data)) return data;
+  if(data && typeof data==="object"){
+    var keys=["contents","items","components","list","data","files","resources"];
+    for(var i=0;i<keys.length;i++){
+      if(Array.isArray(data[keys[i]])) return data[keys[i]];
+    }
+    // 对象值为数组时合并
+    var merged=[];
+    Object.keys(data).forEach(function(k){
+      if(Array.isArray(data[k])) merged=merged.concat(data[k]);
+    });
+    if(merged.length) return merged;
+  }
+  return null;
+}
+
+/* ---------- 渲染 ---------- */
+function render(){
+  var q=searchTerm.toLowerCase();
+  var filtered=allItems.filter(function(it){
+    var okType = activeType==="all" || it._type===activeType;
+    var okSearch = !q ||
+      it._verName.toLowerCase().indexOf(q)!==-1 ||
+      it._type.toLowerCase().indexOf(q)!==-1;
+    return okType && okSearch;
+  });
+
+  statsEl.textContent = allItems.length
+    ? ("共 "+allItems.length+" 个组件 · 当前显示 "+filtered.length+" 个")
+    : "";
+
+  if(!filtered.length){
+    grid.innerHTML="";
+    emptyEl.classList.add("show");
+    return;
+  }
+  emptyEl.classList.remove("show");
+
+  // 分组
+  var groups={}, order=["Box64","WOWBox64","DXVK","VKD3D","FEXCore","Wine","Proton"];
+  filtered.forEach(function(it){
+    (groups[it._type] || (groups[it._type]=[])).push(it);
+  });
+  var types=Object.keys(groups).sort(function(a,b){
+    var ia=order.indexOf(a), ib=order.indexOf(b);
+    if(ia!==-1||ib!==-1) return (ia===-1?99:ia)-(ib===-1?99:ib);
+    return a.localeCompare(b);
+  });
+
+  var html="";
+  types.forEach(function(t){
+    var items=groups[t].slice().sort(function(a,b){
+      return String(b._verName).localeCompare(String(a._verName),undefined,{numeric:true,sensitivity:"base"});
+    });
+    html+='<div style="grid-column:1/-1;margin:14px 0 2px;font-size:.78rem;font-weight:700;'+
+          'letter-spacing:.06em;color:var(--dim);text-transform:uppercase">'+
+          esc(t)+' · '+items.length+'</div>';
+    items.forEach(function(it){
+      var url=it._url, file=fileNameFromUrl(url);
+      html+='<div class="card">'+
+        '<div class="card-head">'+
+          '<span class="badge '+esc(t)+'">'+esc(t)+'</span>'+
+          '<span class="card-meta">verCode '+esc(pickVerCode(it))+'</span>'+
+        '</div>'+
+        '<div class="card-title" title="'+esc(it._verName)+'">'+esc(it._verName||"未知版本")+'</div>'+
+        '<div class="card-meta" title="'+esc(file)+'">'+esc(file)+'</div>'+
+        '<div class="card-actions">'+
+          '<a class="btn btn-download" href="'+esc(url)+'" target="_blank" rel="noopener">下载</a>'+
+          '<button class="btn btn-copy" data-url="'+esc(url)+'">复制链接</button>'+
+        '</div>'+
+      '</div>';
+    });
+  });
+  grid.innerHTML=html;
+}
+
+/* ---------- 初始化数据 ---------- */
+function buildFilters(){
+  var seen={}, types=[];
+  allItems.forEach(function(it){
+    if(!seen[it._type]){ seen[it._type]=1; types.push(it._type); }
+  });
+  var order=["Box64","WOWBox64","DXVK","VKD3D","FEXCore","Wine","Proton"];
+  types.sort(function(a,b){
+    var ia=order.indexOf(a), ib=order.indexOf(b);
+    if(ia!==-1||ib!==-1) return (ia===-1?99:ia)-(ib===-1?99:ib);
+    return a.localeCompare(b);
+  });
+
+  typeFilters.innerHTML="";
+  function mk(label,val){
+    var b=document.createElement("button");
+    b.textContent=label;
+    b.setAttribute("data-type",val);
+    if(val==="all") b.classList.add("active");
+    typeFilters.appendChild(b);
+  }
+  mk("全部","all");
+  types.forEach(function(t){ mk(t,t); });
+}
+
+function init(rawData, sourceLabel){
+  var list=normalizeRoot(rawData);
+  if(!list){
+    throw new Error("JSON 结构无法识别（既不是数组，也没有 contents/items 等数组字段）");
+  }
+  var items=[];
+  list.forEach(function(it){
+    if(!it || typeof it!=="object") return;
+    var url=pickUrl(it);
+    var name=pickVerName(it);
+    if(!url) return;
+    if(!name) name=fileNameFromUrl(url);
+    items.push({
+      _type: normType(pickType(it)),
+      _verName: String(name),
+      _url: String(url),
+      raw: it
+    });
+  });
+
+  if(!items.length){
+    throw new Error("解析后没有含下载链接的条目（可能字段名不匹配，页面已兼容 remoteUrl/url/downloadUrl 等）");
+  }
+
+  allItems=items;
+  activeType="all"; searchTerm=""; searchInput.value="";
+  toolbar.style.display="";
+  errPanel.classList.add("hidden");
+  statusEl.style.display="none";
+  emptyEl.classList.remove("show");
+  buildFilters();
+  render();
+
+  statsEl.title = sourceLabel ? ("数据来源：" + sourceLabel) : "";
+}
+
+/* ---------- 网络加载 ---------- */
+function fetchWithTimeout(url, ms){
+  return new Promise(function(resolve, reject){
+    var done=false;
+    var ctrl = (typeof AbortController!=="undefined") ? new AbortController() : null;
+    var timer=setTimeout(function(){
+      if(done) return;
+      done=true;
+      if(ctrl) try{ctrl.abort();}catch(e){}
+      reject(new Error("超时（"+ms+"ms）"));
+    }, ms);
+
+    var opts={ cache:"no-cache" };
+    if(ctrl) opts.signal=ctrl.signal;
+
+    fetch(url, opts).then(function(res){
+      if(done) return;
+      done=true; clearTimeout(timer);
+      if(!res.ok) return reject(new Error("HTTP "+res.status));
+      res.text().then(function(txt){
+        try{ resolve(JSON.parse(txt)); }
+        catch(e){ reject(new Error("返回内容不是合法 JSON")); }
+      }, function(e){ reject(e); });
+    }, function(err){
+      if(done) return;
+      done=true; clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+function trySources(){
+  var attempts=[];
+  RAW_BASES.forEach(function(u){
+    attempts.push({label:u, url:u});
+    attempts.push({label:"代理 · "+u, url:PROXY+encodeURIComponent(u)});
+  });
+
+  diag.innerHTML = "正在依次尝试 " + attempts.length + " 个数据源…<br>";
+
+  var i=0;
+  function next(){
+    if(i>=attempts.length){
+      statusEl.style.display="none";
+      errPanel.classList.remove("hidden");
+      errMsg.textContent="已尝试全部 " + attempts.length + " 个数据源，均失败。";
+      return;
+    }
+    var a=attempts[i++];
+    var line=document.createElement("div");
+    line.textContent="· 尝试：" + a.label;
+    diag.appendChild(line);
+
+    fetchWithTimeout(a.url, TIMEOUT_MS).then(function(data){
+      line.textContent += "  ✅";
+      line.style.color="#7ce8a8";
+      init(data, a.label);
+    }, function(err){
+      line.textContent += "  ❌ " + (err && err.message ? err.message : "失败");
+      line.style.color="#e87c7c";
+      next();
+    });
+  }
+  next();
+}
+
+/* ---------- 事件 ---------- */
+grid.addEventListener("click", function(e){
+  var btn=e.target.closest ? e.target.closest(".btn-copy") : null;
+  if(!btn) return;
+  var url=btn.getAttribute("data-url")||"";
+  if(!url) return;
+  function ok(){ showToast("链接已复制"); }
+  function fail(){ showToast("复制失败，请手动复制"); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(ok, fail);
+  }else{
+    var ta=document.createElement("textarea");
+    ta.value=url; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy") ? ok() : fail(); }
+    catch(e){ fail(); }
+    document.body.removeChild(ta);
+  }
+});
+
+var searchTimer;
+searchInput.addEventListener("input", function(){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(function(){
+    searchTerm=searchInput.value.trim();
+    render();
+  },160);
+});
+
+typeFilters.addEventListener("click", function(e){
+  var btn=e.target.closest ? e.target.closest("button[data-type]") : null;
+  if(!btn) return;
+  activeType=btn.getAttribute("data-type");
+  var btns=typeFilters.querySelectorAll("button");
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle("active", btns[i]===btn);
+  render();
+});
+
+/* 本地文件 */
+function loadFile(file){
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var data=JSON.parse(String(reader.result));
+      init(data, "本地文件：" + file.name);
+      showToast("已从本地加载");
+    }catch(err){
+      errPanel.classList.remove("hidden");
+      errMsg.textContent="本地文件解析失败：" + (err && err.message ? err.message : "未知错误");
+    }
+  };
+  reader.onerror=function(){
+    errPanel.classList.remove("hidden");
+    errMsg.textContent="读取本地文件失败";
+  };
+  reader.readAsText(file, "utf-8");
+}
+fileInput.addEventListener("change", function(){
+  loadFile(fileInput.files && fileInput.files[0]);
+});
+
+/* 拖拽 */
+var dragDepth=0;
+window.addEventListener("dragenter", function(e){
+  e.preventDefault(); dragDepth++; dropOverlay.classList.add("show");
+});
+window.addEventListener("dragover", function(e){ e.preventDefault(); });
+window.addEventListener("dragleave", function(e){
+  e.preventDefault(); dragDepth--; if(dragDepth<=0){ dragDepth=0; dropOverlay.classList.remove("show"); }
+});
+window.addEventListener("drop", function(e){
+  e.preventDefault(); dragDepth=0; dropOverlay.classList.remove("show");
+  var f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  loadFile(f);
+});
+
+retryBtn.addEventListener("click", function(){
+  errPanel.classList.add("hidden");
+  statusEl.style.display="";
+  statusEl.textContent="正在重新加载…";
+  trySources();
+});
+
+/* 启动 */
+trySources();
+
+})();
+</script>
+</body>
+</html>
