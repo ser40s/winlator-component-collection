@@ -1,1 +1,43 @@
+name: Update contents.json
 
+on:
+  schedule:
+    - cron: "0 3 * * *"        # 每天 UTC 03:00（北京时间 11:00）
+  workflow_dispatch:            # 支持在 Actions 页面手动触发
+
+permissions:
+  contents: write               # 允许 push 回仓库
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch upstream contents.json
+        run: |
+          set -e
+          PRIMARY="https://raw.githubusercontent.com/The412Banner/winlator-contents/main/contents.json"
+          FALLBACK="https://cdn.jsdelivr.net/gh/The412Banner/winlator-contents@main/contents.json"
+          if ! curl -fsSL --retry 3 --max-time 60 "$PRIMARY" -o contents.new.json; then
+            echo "raw 拉取失败，改用 jsDelivr"
+            curl -fsSL --retry 3 --max-time 60 "$FALLBACK" -o contents.new.json
+          fi
+          # 校验是合法 JSON，避免坏数据覆盖
+          python3 -c "import json; d=json.load(open('contents.new.json')); assert isinstance(d, list) and d"
+
+      - name: Commit if changed
+        run: |
+          set -e
+          if [ -f contents.json ] && cmp -s contents.json contents.new.json; then
+            echo "无变化，跳过提交"
+            rm contents.new.json
+            exit 0
+          fi
+          mv contents.new.json contents.json
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add contents.json
+          git commit -m "chore: update contents.json ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          git push
